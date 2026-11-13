@@ -1,0 +1,302 @@
+/*
+ * Fulla's whole look, as custom properties. Change these to rebrand;
+ * nothing else in the app hard-codes a colour.
+ */
+:root {
+	--bg: #f4f1ea;
+	--surface: #fffdf8;
+	--surface-2: #ece7dc;
+	--text: #1f2a37;
+	--muted: #5b6573;
+	--border: #d8d1c2;
+	--accent: #1f5f8b;
+	--accent-text: #ffffff;
+	--ok: #2f7d4f;
+	--danger: #b3392f;
+	--radius: 14px;
+	--font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+	color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #121820;
+		--surface: #1a222c;
+		--surface-2: #232d39;
+		--text: #e9e4da;
+		--muted: #a3abb6;
+		--border: #313c49;
+		--accent: #6fb1e0;
+		--accent-text: #0c1218;
+		--ok: #6cc28f;
+		--danger: #ef7d72;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--accent);
+}
+
+code,
+pre {
+	font-family: var(--mono);
+}
+
+.page {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem 1rem;
+}
+
+.column {
+	width: 100%;
+	max-width: 34rem;
+}
+
+.brand {
+	text-align: center;
+	margin-bottom: 2rem;
+}
+
+.brand-mark {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 1rem;
+	background: var(--surface-2);
+	color: var(--accent);
+	margin-bottom: 0.75rem;
+}
+
+.brand h1 {
+	margin: 0;
+	font-size: 1.6rem;
+	letter-spacing: -0.01em;
+}
+
+.brand p {
+	margin: 0.15rem 0 0;
+	color: var(--muted);
+	font-size: 0.9rem;
+}
+
+.card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 2rem;
+	margin-bottom: 1.25rem;
+}
+
+.card.center {
+	text-align: center;
+}
+
+.card.danger {
+	border-color: color-mix(in oklab, var(--danger) 45%, var(--border));
+}
+
+.card h2 {
+	margin: 0 0 0.5rem;
+	font-size: 1.15rem;
+}
+
+.card p {
+	margin: 0 0 1rem;
+	color: var(--muted);
+}
+
+.card p:last-child {
+	margin-bottom: 0;
+}
+
+.icon-lg {
+	color: var(--accent);
+	margin-bottom: 0.75rem;
+}
+
+.card.danger .icon-lg {
+	color: var(--danger);
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.4rem;
+	border-radius: 0.75rem;
+	border: 1px solid transparent;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.btn-primary {
+	background: var(--accent);
+	color: var(--accent-text);
+}
+
+.btn-primary:hover {
+	background: color-mix(in oklab, var(--accent) 88%, black);
+}
+
+.btn-quiet {
+	background: var(--surface-2);
+	color: var(--text);
+	border-color: var(--border);
+}
+
+.btn-quiet:hover {
+	background: color-mix(in oklab, var(--surface-2) 85%, var(--text));
+}
+
+.btn-ok {
+	background: color-mix(in oklab, var(--ok) 18%, var(--surface));
+	color: var(--ok);
+	border-color: color-mix(in oklab, var(--ok) 45%, transparent);
+}
+
+.btn-block {
+	width: 100%;
+}
+
+.btn:focus-visible,
+summary:focus-visible,
+.help-toggle:focus-visible {
+	outline: 3px solid color-mix(in oklab, var(--accent) 60%, transparent);
+	outline-offset: 2px;
+}
+
+.secret {
+	background: var(--surface-2);
+	border: 1px solid var(--border);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	margin: 0 0 0.75rem;
+	white-space: pre-wrap;
+	word-break: break-all;
+	font-size: 0.95rem;
+}
+
+.help {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	margin-bottom: 1.25rem;
+	overflow: hidden;
+}
+
+.help-toggle {
+	width: 100%;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.8rem 1.25rem;
+	background: none;
+	border: 0;
+	color: var(--text);
+	font: inherit;
+	font-weight: 600;
+	font-size: 0.9rem;
+	cursor: pointer;
+	text-align: left;
+}
+
+.help-body {
+	border-top: 1px solid var(--border);
+	padding: 1rem 1.25rem 1.25rem;
+	font-size: 0.9rem;
+	color: var(--muted);
+}
+
+.help-body p {
+	margin: 0 0 0.75rem;
+}
+
+.help-body summary {
+	cursor: pointer;
+	color: var(--text);
+	font-weight: 600;
+}
+
+.small {
+	font-size: 0.8rem;
+}
+
+.footnote {
+	text-align: center;
+	font-size: 0.78rem;
+	color: var(--muted);
+}
+
+.spinner {
+	display: inline-block;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 50%;
+	border: 4px solid var(--border);
+	border-top-color: var(--accent);
+	animation: spin 0.9s linear infinite;
+	margin-bottom: 0.75rem;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spinner {
+		animation-duration: 3s;
+	}
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.card .spaced {
+	margin-top: 1rem;
+}
+
+/* SvelteKit's route announcer, hidden even if its own inline style is blocked. */
+#svelte-announcer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	overflow: hidden;
+	white-space: nowrap;
+	width: 1px;
+	height: 1px;
+}
