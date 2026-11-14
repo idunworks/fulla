@@ -11,3 +11,5 @@ data/
 test-results/
 playwright-report/
 e2e-data/
+build-demo/
+e2e-demo-data/

@@ -1,3 +1,5 @@
+import { base } from '$app/paths';
+
 /** The browser's side of the API. Errors keep their HTTP status so pages can show the right state. */
 export class ApiError extends Error {
 	constructor(
@@ -10,7 +12,7 @@ export class ApiError extends Error {
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-	const res = await fetch(path, {
+	const res = await fetch(`${base}${path}`, {
 		...init,
 		credentials: 'same-origin',
 		headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) }
@@ -49,6 +51,9 @@ export const requestSignInLink = (email: string, next: string) =>
 /** Spend the emailed token; the server sets the session cookie. */
 export const verifySignIn = (token: string) =>
 	call<{ next: string }>('/api/auth/verify', { method: 'POST', body: JSON.stringify({ token }) });
+
+/** The demo only: a throwaway creator session for this browser. */
+export const startDemo = () => call<{ ok: true }>('/api/auth/demo', { method: 'POST', body: '{}' });
 
 export const signOut = () => call<void>('/api/auth/logout', { method: 'POST', body: '{}' });
 

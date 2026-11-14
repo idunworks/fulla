@@ -14,6 +14,8 @@ docker compose up -d
 
 Then put HTTPS in front of it: see [docs/self-hosting.md](docs/self-hosting.md).
 
+**Try it without installing anything:** [idunworks.com/fulla-demo](https://idunworks.com/fulla-demo/), a public demo. No account; you play both the sender and the recipient.
+
 ## Try it in 30 seconds
 
 No Docker, no email server. Needs Node 22 and pnpm.

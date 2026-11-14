@@ -5,6 +5,8 @@
 	 * links (token + key, both in the #fragment) exist only on this page,
 	 * until it is left.
 	 */
+	import { untrack } from 'svelte';
+	import { base } from '$app/paths';
 	import { ApiError, createSecret } from '$lib/api';
 	import Icon from '$lib/components/Icon.svelte';
 	import { buildShareLink, encrypt, generateKey } from '$lib/crypto';
@@ -13,8 +15,11 @@
 	let { data } = $props();
 	const t = $derived(messages(data.lang));
 
-	const LIFETIMES = [1, 4, 24, 72, 168] as const;
-	type Hours = (typeof LIFETIMES)[number];
+	/** "1 hour", "10 minutes": the lifetimes the server offers, in minutes. */
+	function lifetimeLabel(minutes: number): string {
+		if (minutes === 10) return t.minutes_10;
+		return t[`hours_${minutes / 60}` as 'hours_1' | 'hours_4' | 'hours_24' | 'hours_72' | 'hours_168'];
+	}
 
 	interface Row {
 		key: number;
@@ -24,7 +29,8 @@
 
 	let label = $state('');
 	let secretText = $state('');
-	let hours = $state<Hours>(24);
+	// 24 hours where it is offered, else the longest there is.
+	let minutes = $state(untrack(() => (data.lifetimes.includes(1440) ? 1440 : data.lifetimes[data.lifetimes.length - 1])));
 	let nextKey = 1;
 	let rows = $state<Row[]>([{ key: 0, label: '', email: '' }]);
 
@@ -55,7 +61,10 @@
 		event.preventDefault();
 		const recipients = rows
 			.filter((r) => r.label.trim())
-			.map((r) => ({ label: r.label.trim(), ...(r.email.trim() ? { email: r.email.trim() } : {}) }));
+			.map((r) => ({
+				label: r.label.trim(),
+				...(data.askEmails && r.email.trim() ? { email: r.email.trim() } : {})
+			}));
 		message = problemWithForm(recipients);
 		if (message) return;
 
@@ -66,12 +75,12 @@
 			const created = await createSecret({
 				label: label.trim(),
 				...sealed,
-				expires_at: new Date(Date.now() + hours * 3_600_000).toISOString(),
+				expires_at: new Date(Date.now() + minutes * 60_000).toISOString(),
 				recipients
 			});
 			links = created.links.map((l) => ({
 				label: l.label,
-				url: buildShareLink(window.location.origin, l.token, exported)
+				url: buildShareLink(`${window.location.origin}${base}`, l.token, exported)
 			}));
 			// Nothing on this page needs the plain text any more.
 			secretText = '';
@@ -97,7 +106,7 @@
 	<title>{t.newTitle} · Fulla</title>
 </svelte:head>
 
-<a href="/admin" class="back small"><Icon name="chevronLeft" size={14} /> {t.backToList}</a>
+<a href="{base}/admin" class="back small"><Icon name="chevronLeft" size={14} /> {t.backToList}</a>
 
 <header class="page-head">
 	<h1>{t.newTitle}</h1>
@@ -113,10 +122,19 @@
 			<li class="card">
 				<div class="link-head">
 					<strong>{link.label}</strong>
-					<button type="button" class="btn btn-small {copiedIndex === i ? 'btn-ok' : 'btn-quiet'}" onclick={() => copy(link.url, i)}>
-						<Icon name={copiedIndex === i ? 'check' : 'copy'} />
-						{copiedIndex === i ? t.copied : t.copyLink}
-					</button>
+					<span class="link-buttons">
+						{#if data.demo}
+							<!-- Demo only: in real use, opening a link here would spend that recipient's one view. -->
+							<a class="btn btn-small btn-quiet" href={link.url} target="_blank" rel="noopener noreferrer">
+								<Icon name="eye" />
+								{t.openAsRecipient}
+							</a>
+						{/if}
+						<button type="button" class="btn btn-small {copiedIndex === i ? 'btn-ok' : 'btn-quiet'}" onclick={() => copy(link.url, i)}>
+							<Icon name={copiedIndex === i ? 'check' : 'copy'} />
+							{copiedIndex === i ? t.copied : t.copyLink}
+						</button>
+					</span>
 				</div>
 				<code class="link-url">{link.url}</code>
 			</li>
@@ -129,7 +147,7 @@
 				{copiedIndex === 'all' ? t.copied : t.copyAll}
 			</button>
 		{/if}
-		<a href="/admin" class="btn btn-quiet">{t.done}</a>
+		<a href="{base}/admin" class="btn btn-quiet">{t.done}</a>
 	</div>
 {:else}
 	<p class="intro">{t.newIntro}</p>
@@ -149,9 +167,11 @@
 		<fieldset class="field" aria-describedby="recipients-hint">
 			<legend>{t.recipientsLabel}</legend>
 			{#each rows as row (row.key)}
-				<div class="recipient">
+				<div class="recipient" class:no-email={!data.askEmails}>
 					<input type="text" bind:value={row.label} placeholder={t.recipientName} aria-label={t.recipientName} maxlength="100" />
-					<input type="email" bind:value={row.email} placeholder={t.recipientEmail} aria-label={t.recipientEmail} maxlength="254" />
+					{#if data.askEmails}
+						<input type="email" bind:value={row.email} placeholder={t.recipientEmail} aria-label={t.recipientEmail} maxlength="254" />
+					{/if}
 					{#if rows.length > 1}
 						<button type="button" class="btn btn-quiet btn-icon" onclick={() => removeRow(row.key)} aria-label={fill(t.removeRecipient, { name: row.label || '…' })}>
 							<Icon name="x" />
@@ -162,14 +182,14 @@
 			{#if rows.length < data.maxRecipients}
 				<button type="button" class="btn btn-quiet btn-small" onclick={addRow}>+ {t.addRecipient}</button>
 			{/if}
-			<small id="recipients-hint">{t.recipientsHint}</small>
+			<small id="recipients-hint">{data.askEmails ? t.recipientsHint : t.recipientsHintDemo}</small>
 		</fieldset>
 
 		<div class="field">
 			<label for="expires">{t.expiresLabel}</label>
-			<select id="expires" bind:value={hours}>
-				{#each LIFETIMES as h (h)}
-					<option value={h}>{t[`hours_${h}` as const]}</option>
+			<select id="expires" bind:value={minutes}>
+				{#each data.lifetimes as m (m)}
+					<option value={m}>{lifetimeLabel(m)}</option>
 				{/each}
 			</select>
 		</div>

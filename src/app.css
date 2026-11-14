@@ -387,3 +387,14 @@ select:focus-visible {
 	background: var(--danger);
 	color: var(--accent-text);
 }
+
+/* The public demo's notice, on every page (FULLA_DEMO=true only). */
+.demo-banner {
+	margin: 0;
+	padding: 0.6rem 1rem;
+	text-align: center;
+	font-size: 0.9rem;
+	color: var(--text);
+	background: var(--surface-2);
+	border-bottom: 2px solid var(--warn);
+}

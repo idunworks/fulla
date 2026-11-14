@@ -12,9 +12,14 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm build && pnpm prune --prod
+# Serve under a path (/fulla) instead of a whole host. SvelteKit writes it into the build.
+ARG FULLA_BASE_PATH=""
+RUN FULLA_BASE_PATH="$FULLA_BASE_PATH" pnpm build && pnpm prune --prod
 
 FROM node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94
+ARG FULLA_BASE_PATH=""
+# Kept so the health check knows where the app answers.
+ENV FULLA_BASE_PATH=$FULLA_BASE_PATH
 ENV NODE_ENV=production \
     PORT=3000 \
     FULLA_DATABASE=/data/fulla.db
@@ -27,5 +32,5 @@ USER node
 VOLUME ["/data"]
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:3000' + (process.env.FULLA_BASE_PATH || '') + '/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 CMD ["node", "build"]

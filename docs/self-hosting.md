@@ -47,6 +47,26 @@ location / {
 }
 ```
 
+### Under a path of a shared host
+
+To serve Fulla at `https://example.com/fulla` next to another site, build it with
+`FULLA_BASE_PATH=/fulla` (in `.env`, then `docker compose up -d --build`) and pass the path on
+unchanged: no trailing slash on `proxy_pass`, so `/fulla/view` reaches Fulla as `/fulla/view`.
+
+```nginx
+location ^~ /fulla/ {
+	proxy_pass http://127.0.0.1:3000;
+	proxy_set_header Host $host;
+	proxy_set_header X-Forwarded-For $remote_addr;
+	proxy_set_header X-Forwarded-Proto https;
+}
+```
+
+Fulla then scopes its session cookie to `/fulla`, and only sends sign-in redirects there. The
+other site shares Fulla's origin, though: its scripts could call Fulla's API with the visitor's
+session, and its cookies reach Fulla. Use a host of its own when you don't trust the other site
+as much as Fulla, and have the proxy forward only Fulla's cookie when you can.
+
 ### The visitor's address
 
 Rate limits count per visitor. Behind a proxy, Fulla only sees the proxy, so tell it which

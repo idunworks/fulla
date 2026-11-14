@@ -9,7 +9,8 @@
 	 */
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError, requestSignInLink, verifySignIn } from '$lib/api';
+	import { base } from '$app/paths';
+	import { ApiError, requestSignInLink, startDemo, verifySignIn } from '$lib/api';
 	import Icon from '$lib/components/Icon.svelte';
 	import { messages } from '$lib/i18n';
 
@@ -72,6 +73,21 @@
 		}
 	}
 
+	/** The demo: a throwaway session, then straight to the creator's pages. */
+	async function beginDemo(): Promise<void> {
+		busy = true;
+		message = '';
+		try {
+			await startDemo();
+			await goto(`${base}/admin/new`, { replaceState: true, invalidateAll: true });
+		} catch (err) {
+			const status = err instanceof ApiError ? err.status : 0;
+			message = status === 429 ? t.tooMany : t.failed;
+		} finally {
+			busy = false;
+		}
+	}
+
 	function startOver(): void {
 		authState = 'ask';
 		message = '';
@@ -94,7 +110,16 @@
 		</header>
 
 		<div aria-live="polite">
-			{#if authState === 'loading'}
+			{#if data.demo}
+				<section class="card center">
+					<h2>{t.demoTitle}</h2>
+					<p>{t.demoBody}</p>
+					{#if message}<p class="form-error" role="alert">{message}</p>{/if}
+					<button type="button" class="btn btn-primary" onclick={beginDemo} disabled={busy}>
+						{busy ? t.demoStarting : t.demoStart}
+					</button>
+				</section>
+			{:else if authState === 'loading'}
 				<section class="card center">
 					<span class="spinner" aria-hidden="true"></span>
 				</section>

@@ -36,6 +36,8 @@ jobs:
         run: |
           pnpm exec playwright install --with-deps chromium
           pnpm test:e2e
+      - name: End-to-end tests of the demo (under /fulla-demo)
+        run: pnpm test:e2e:demo
 
   secrets:
     runs-on: ubuntu-latest

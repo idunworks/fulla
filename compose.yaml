@@ -1,7 +1,11 @@
 # docker compose up -d   (after: cp config.example.env .env, and editing it)
 services:
   fulla:
-    build: .
+    build:
+      context: .
+      args:
+        # Empty: Fulla has the host to itself. See config.example.env.
+        FULLA_BASE_PATH: ${FULLA_BASE_PATH:-}
     image: fulla:local
     env_file: .env
     ports:

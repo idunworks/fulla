@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 (2026-11-14)
+
+- `FULLA_BASE_PATH` serves Fulla under a path of a shared host, such as `/fulla`. The session
+  cookie is then scoped to that path, and sign-in only redirects inside it.
+- `FULLA_DEMO=true` runs a public demo: no email sign-in, a throwaway session per browser, and
+  each link gets an "Open as recipient" button. Secrets live at most 10 minutes, with up to 3
+  recipients and 4 KiB, and no recipient emails are kept. Live secrets are capped per visitor
+  and in total.
+- The new-secret form offers the lifetimes the server allows.
+
 ## 0.1.0 (2026-11-14)
 
 The first release.

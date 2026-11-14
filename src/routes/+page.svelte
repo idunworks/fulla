@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import { messages } from '$lib/i18n';
 
@@ -19,9 +20,9 @@
 		</header>
 		<section class="card center">
 			<p>{t.newIntro}</p>
-			<a class="btn btn-primary" href={data.signedIn ? '/admin' : '/auth'}>
+			<a class="btn btn-primary" href={data.signedIn ? `${base}/admin` : `${base}/auth`}>
 				<Icon name="lock" />
-				{data.signedIn ? t.yourSecrets : t.signInTitle}
+				{data.signedIn ? t.yourSecrets : data.demo ? t.tryDemo : t.signInTitle}
 			</a>
 		</section>
 		<p class="footnote">{t.footer}</p>

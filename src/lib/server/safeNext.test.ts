@@ -44,3 +44,16 @@ describe('safeNext', () => {
 		expect(safeNext({ toString: () => '//evil.example' })).toBe('/admin');
 	});
 });
+
+describe('safeNext under a base path', () => {
+	const BASE = '/fulla-demo';
+	it('keeps paths under the base', () => {
+		expect(safeNext('/fulla-demo/admin/new', `${BASE}/admin`, BASE)).toBe('/fulla-demo/admin/new');
+		expect(safeNext('/fulla-demo', `${BASE}/admin`, BASE)).toBe('/fulla-demo');
+	});
+	it('refuses the rest of the host, and look-alike prefixes', () => {
+		expect(safeNext('/admin', `${BASE}/admin`, BASE)).toBe('/fulla-demo/admin');
+		expect(safeNext('/fulla-demo-evil/x', `${BASE}/admin`, BASE)).toBe('/fulla-demo/admin');
+		expect(safeNext('/fulla-demo/../admin', `${BASE}/admin`, BASE)).toBe('/fulla-demo/admin');
+	});
+});

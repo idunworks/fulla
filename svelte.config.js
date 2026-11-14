@@ -1,11 +1,21 @@
 import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+/**
+ * FULLA_BASE_PATH serves Fulla under a path, such as /fulla, instead of a
+ * whole host. SvelteKit writes it into the build, so it is read at build time.
+ */
+const basePath = process.env.FULLA_BASE_PATH ?? '';
+if (basePath !== '' && !/^(\/[a-z0-9][a-z0-9._-]*)+$/i.test(basePath)) {
+	throw new Error(`FULLA_BASE_PATH must be empty or like /fulla (no trailing slash), not "${basePath}".`);
+}
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({ out: process.env.FULLA_BUILD_DIR ?? 'build' }),
+		paths: { base: basePath },
 		// Kit adds hashes for the few inline scripts it writes itself, so the
 		// policy never needs 'unsafe-inline'.
 		csp: {

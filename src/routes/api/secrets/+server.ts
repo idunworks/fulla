@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { handle, noStore, problem, readJson } from '$lib/server/http';
+import { limits } from '$lib/server/config';
 import { getDb } from '$lib/server/instance';
 import { createSecret, listSecrets, parseSecretInput } from '$lib/server/secrets';
 
@@ -15,6 +16,7 @@ export const POST: RequestHandler = ({ locals, request }) =>
 	handle(async () => {
 		if (!locals.creator) return problem(401, 'Sign in first.');
 		const now = Date.now();
-		const input = parseSecretInput(await readJson(request), now);
-		return noStore(createSecret(getDb(), locals.creator, input, now), 201);
+		const rules = limits();
+		const input = parseSecretInput(await readJson(request), now, rules);
+		return noStore(createSecret(getDb(), locals.creator, input, now, rules), 201);
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import StatusPill from '$lib/components/StatusPill.svelte';
 	import { fill, formatDate, messages } from '$lib/i18n';
@@ -13,7 +14,7 @@
 
 <header class="page-head">
 	<h1>{t.yourSecrets}</h1>
-	<a href="/admin/new" class="btn btn-primary">
+	<a href="{base}/admin/new" class="btn btn-primary">
 		<Icon name="lock" />
 		{t.newSecret}
 	</a>
@@ -28,7 +29,7 @@
 	<ul class="rows">
 		{#each data.secrets as secret (secret.id)}
 			<li>
-				<a class="row" href="/admin/{secret.id}">
+				<a class="row" href="{base}/admin/{secret.id}">
 					<span class="row-main">
 						<strong>{secret.label}</strong>
 						<span class="small">

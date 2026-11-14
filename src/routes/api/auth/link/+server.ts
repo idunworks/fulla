@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import type { RequestHandler } from './$types';
 import { allow } from '$lib/server/rateLimit';
 import {
@@ -7,7 +8,7 @@ import {
 	isAllowed,
 	normalizeEmail
 } from '$lib/server/auth';
-import { allowlist, getMailer, publicOrigin } from '$lib/server/config';
+import { allowlist, demoMode, getMailer, publicOrigin } from '$lib/server/config';
 import { handle, noStore, problem, readJson } from '$lib/server/http';
 import { getDb } from '$lib/server/instance';
 import { maskEmail } from '$lib/server/mailer';
@@ -23,6 +24,8 @@ const SAME_ANSWER = { detail: 'If this address may sign in, a link is on its way
  */
 export const POST: RequestHandler = (event) =>
 	handle(async () => {
+		// The demo has no sign-in by email: see /api/auth/demo.
+		if (demoMode()) return problem(404, 'Not found.');
 		const db = getDb();
 		const now = Date.now();
 		if (!allow(db, `signin:${event.getClientAddress()}`, LINK_REQUEST_BUDGET, now)) {
@@ -37,8 +40,8 @@ export const POST: RequestHandler = (event) =>
 			if (!origin) {
 				console.error('fulla: set ORIGIN to this site’s public address, or sign-in links cannot be sent.');
 			} else {
-				const token = createLoginToken(db, email, safeNext(body?.next), now);
-				if (token) void sendLink(email, `${origin}/auth#token=${token}`, event.locals.lang);
+				const token = createLoginToken(db, email, safeNext(body?.next, `${base}/admin`, base), now);
+				if (token) void sendLink(email, `${origin}${base}/auth#token=${token}`, event.locals.lang);
 			}
 		}
 		return noStore(SAME_ANSWER, 202);

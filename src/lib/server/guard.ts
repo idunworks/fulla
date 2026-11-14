@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 
 /**
@@ -6,6 +7,6 @@ import { redirect } from '@sveltejs/kit';
  * layout's, so a check in the layout alone wouldn't stop the page's query.
  */
 export function requireCreator({ locals, url }: { locals: App.Locals; url: URL }): string {
-	if (!locals.creator) redirect(303, `/auth?next=${encodeURIComponent(url.pathname + url.search)}`);
+	if (!locals.creator) redirect(303, `${base}/auth?next=${encodeURIComponent(url.pathname + url.search)}`);
 	return locals.creator;
 }

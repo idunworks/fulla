@@ -1,6 +1,6 @@
 {
 	"name": "fulla",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Share a password once. Encrypted in the browser, readable once per recipient, then gone.",
 	"license": "MIT",
 	"private": true,
@@ -17,7 +17,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"test:e2e:demo": "FULLA_BASE_PATH=/fulla-demo FULLA_BUILD_DIR=build-demo vite build && playwright test -c playwright.demo.config.ts"
 	},
 	"dependencies": {
 		"better-sqlite3": "13.0.3",

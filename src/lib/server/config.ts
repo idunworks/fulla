@@ -6,6 +6,17 @@ import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { parseAllowlist, type Allowlist } from './auth';
 import { createMailer, type Mailer } from './mailer';
+import { DEMO_LIMITS, LIMITS, type Limits } from './secrets';
+
+/** FULLA_DEMO=true: the public demo. No sign-in email, small and short-lived secrets. */
+export function demoMode(): boolean {
+	return env.FULLA_DEMO === 'true';
+}
+
+/** The rules secrets are held to on this instance. */
+export function limits(): Limits {
+	return demoMode() ? DEMO_LIMITS : LIMITS;
+}
 
 let cachedList: { raw: string; list: Allowlist } | null = null;
 

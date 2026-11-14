@@ -1,6 +1,7 @@
 <script lang="ts">
 	/** One secret: who has opened and revealed it, and a way to revoke it. Never the links. */
 	import { invalidateAll } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { revokeSecret } from '$lib/api';
 	import Icon from '$lib/components/Icon.svelte';
 	import StatusPill from '$lib/components/StatusPill.svelte';
@@ -33,7 +34,7 @@
 	<title>{secret.label} · Fulla</title>
 </svelte:head>
 
-<a href="/admin" class="back small"><Icon name="chevronLeft" size={14} /> {t.backToList}</a>
+<a href="{base}/admin" class="back small"><Icon name="chevronLeft" size={14} /> {t.backToList}</a>
 
 <header class="page-head">
 	<h1>{secret.label}</h1>

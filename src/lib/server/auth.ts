@@ -32,6 +32,12 @@ export const MAILS_PER_ADDRESS_BUDGET: Budget = { max: 3, windowMs: 15 * 60 * 10
 /** Sign-in attempts per visitor address. */
 export const VERIFY_BUDGET: Budget = { max: 20, windowMs: 15 * 60 * 1000 };
 
+/** The public demo (FULLA_DEMO=true): a throwaway creator per browser, no email. */
+export const DEMO_SESSION_TTL_MS = 60 * 60 * 1000;
+/** Demo sessions started per visitor address. */
+export const DEMO_START_BUDGET: Budget = { max: 10, windowMs: 15 * 60 * 1000 };
+const DEMO_EMAIL_SHAPE = /^demo-[0-9a-f]{16}@demo\.invalid$/;
+
 const TOKEN_BYTES = 32;
 const TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const EMAIL_SHAPE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,63}$/;
@@ -121,9 +127,14 @@ export function spendLoginToken(db: Db, token: unknown, now: number): { email: s
 
 // ── Sessions ──────────────────────────────────────────────────────
 
-export function createSession(db: Db, email: string, now: number): { id: string; expiresAt: number } {
+export function createSession(
+	db: Db,
+	email: string,
+	now: number,
+	ttlMs: number = SESSION_TTL_MS
+): { id: string; expiresAt: number } {
 	const id = newToken();
-	const expiresAt = now + SESSION_TTL_MS;
+	const expiresAt = now + ttlMs;
 	db.prepare(`INSERT INTO sessions (id_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)`).run(
 		sha256(id),
 		email,
@@ -144,6 +155,26 @@ export function sessionEmail(db: Db, id: string | undefined, now: number): strin
 
 export function endSession(db: Db, id: string | undefined): void {
 	if (id && TOKEN_SHAPE.test(id)) db.prepare(`DELETE FROM sessions WHERE id_hash = ?`).run(sha256(id));
+}
+
+/** A made-up creator address for one demo session. `.invalid` can never receive mail. */
+export function newDemoEmail(): string {
+	return `demo-${randomBytes(8).toString('hex')}@demo.invalid`;
+}
+
+export function isDemoEmail(email: string): boolean {
+	return DEMO_EMAIL_SHAPE.test(email);
+}
+
+/**
+ * Who a session's address counts as. In the demo only demo addresses count;
+ * otherwise only allowlisted ones, and a demo address never does, whatever
+ * the allowlist says.
+ */
+export function creatorFor(email: string | null, demo: boolean, list: Allowlist): string | null {
+	if (!email) return null;
+	if (demo) return isDemoEmail(email) ? email : null;
+	return !isDemoEmail(email) && isAllowed(list, email) ? email : null;
 }
 
 /** Forget expired sessions and old sign-in links. */

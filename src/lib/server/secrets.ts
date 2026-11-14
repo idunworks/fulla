@@ -5,7 +5,7 @@
  * - Each recipient has their own link, and each link reveals the secret once.
  * - Opening a link never returns the ciphertext. Revealing does, once.
  * - When every recipient has revealed it, when it expires, or when its creator
- *   revokes it, the ciphertext is destroyed. The row itself goes after RETENTION.
+ *   revokes it, the ciphertext is destroyed. The row itself goes after `retentionMs`.
  * - Only a SHA-256 of each token is stored, so the database cannot rebuild a link.
  *
  * Every function takes the database and the current time, so tests can drive
@@ -14,18 +14,57 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Db } from './db';
 
-export const LIMITS = {
-	/** Base64 ciphertext. 64 KiB is plenty for passwords, keys and notes. */
+export interface Limits {
+	/** Base64 ciphertext characters. */
+	maxCiphertextChars: number;
+	maxRecipients: number;
+	maxLabelChars: number;
+	maxRecipientLabelChars: number;
+	minLifetimeMs: number;
+	maxLifetimeMs: number;
+	/** How long a wiped secret's row (label, who revealed when) stays for its creator. */
+	retentionMs: number;
+	/** Whether recipients' email addresses are kept at all. */
+	keepEmails: boolean;
+	/** Live (unwiped) secrets one creator may hold, and the whole instance. */
+	maxLivePerCreator: number;
+	maxLiveTotal: number;
+}
+
+const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
+
+export const LIMITS: Limits = {
+	// 64 KiB is plenty for passwords, keys and notes.
 	maxCiphertextChars: 64 * 1024,
 	maxRecipients: 25,
 	maxLabelChars: 200,
 	maxRecipientLabelChars: 100,
-	minLifetimeMs: 5 * 60 * 1000,
-	maxLifetimeMs: 7 * 24 * 60 * 60 * 1000
-} as const;
+	minLifetimeMs: 5 * MINUTE,
+	maxLifetimeMs: 7 * DAY,
+	retentionMs: 30 * DAY,
+	keepEmails: true,
+	maxLivePerCreator: Number.POSITIVE_INFINITY,
+	maxLiveTotal: Number.POSITIVE_INFINITY
+};
 
-/** How long a wiped secret's row (label, who revealed when) stays for its creator. */
-export const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+/**
+ * The public demo (FULLA_DEMO=true): anyone may create, so everything is
+ * small and short-lived, and nothing personal is kept.
+ */
+export const DEMO_LIMITS: Limits = {
+	...LIMITS,
+	maxCiphertextChars: 4 * 1024,
+	maxRecipients: 3,
+	maxLifetimeMs: 10 * MINUTE,
+	retentionMs: 60 * MINUTE,
+	keepEmails: false,
+	maxLivePerCreator: 10,
+	maxLiveTotal: 300
+};
+
+/** Kept for callers that only need the default. */
+export const RETENTION_MS = LIMITS.retentionMs;
 
 const IV_BYTES = 12;
 const TOKEN_BYTES = 32;
@@ -39,7 +78,7 @@ export type SecretStatus = 'active' | 'expired' | 'burned' | 'revoked';
 /** A rule was broken. `status` is the HTTP status the API should answer with. */
 export class FullaError extends Error {
 	constructor(
-		readonly status: 400 | 404 | 410 | 413,
+		readonly status: 400 | 404 | 410 | 413 | 503,
 		message: string
 	) {
 		super(message);
@@ -63,11 +102,15 @@ export interface SecretInput {
 }
 
 /** Check an untrusted request body. Returns a clean copy or throws FullaError(400/413). */
-export function parseSecretInput(body: unknown, now: number): SecretInput & { expiresAtMs: number } {
+export function parseSecretInput(
+	body: unknown,
+	now: number,
+	limits: Limits = LIMITS
+): SecretInput & { expiresAtMs: number } {
 	if (!isRecord(body)) throw new FullaError(400, 'Expected a JSON object.');
-	const label = text(body.label, 'label', LIMITS.maxLabelChars);
+	const label = text(body.label, 'label', limits.maxLabelChars);
 	const ciphertext_b64 = base64(body.ciphertext_b64, 'ciphertext_b64');
-	if (ciphertext_b64.length > LIMITS.maxCiphertextChars) {
+	if (ciphertext_b64.length > limits.maxCiphertextChars) {
 		throw new FullaError(413, 'The secret is too large.');
 	}
 	const iv_b64 = base64(body.iv_b64, 'iv_b64');
@@ -78,15 +121,18 @@ export function parseSecretInput(body: unknown, now: number): SecretInput & { ex
 	const expiresAtMs = typeof body.expires_at === 'string' ? Date.parse(body.expires_at) : NaN;
 	if (!Number.isFinite(expiresAtMs)) throw new FullaError(400, 'expires_at must be a date.');
 	const lifetime = expiresAtMs - now;
-	if (lifetime < LIMITS.minLifetimeMs || lifetime > LIMITS.maxLifetimeMs) {
-		throw new FullaError(400, 'expires_at must be between 5 minutes and 7 days from now.');
+	if (lifetime < limits.minLifetimeMs || lifetime > limits.maxLifetimeMs) {
+		throw new FullaError(
+			400,
+			`expires_at must be between ${span(limits.minLifetimeMs)} and ${span(limits.maxLifetimeMs)} from now.`
+		);
 	}
 
 	if (!Array.isArray(body.recipients) || body.recipients.length === 0) {
 		throw new FullaError(400, 'Add at least one recipient.');
 	}
-	if (body.recipients.length > LIMITS.maxRecipients) {
-		throw new FullaError(400, `At most ${LIMITS.maxRecipients} recipients.`);
+	if (body.recipients.length > limits.maxRecipients) {
+		throw new FullaError(400, `At most ${limits.maxRecipients} recipients.`);
 	}
 	const recipients = body.recipients.map((r: unknown, i: number): RecipientInput => {
 		if (!isRecord(r)) throw new FullaError(400, `Recipient ${i + 1} is not an object.`);
@@ -94,7 +140,10 @@ export function parseSecretInput(body: unknown, now: number): SecretInput & { ex
 		if (email !== null && !EMAIL_SHAPE.test(email)) {
 			throw new FullaError(400, `Recipient ${i + 1}: that email address doesn't look right.`);
 		}
-		return { label: text(r.label, `recipient ${i + 1} label`, LIMITS.maxRecipientLabelChars), email };
+		return {
+			label: text(r.label, `recipient ${i + 1} label`, limits.maxRecipientLabelChars),
+			email: limits.keepEmails ? email : null
+		};
 	});
 
 	return {
@@ -105,6 +154,13 @@ export function parseSecretInput(body: unknown, now: number): SecretInput & { ex
 		expiresAtMs,
 		recipients
 	};
+}
+
+/** "10 minutes", "7 days": for error messages. */
+function span(ms: number): string {
+	if (ms >= DAY && ms % DAY === 0) return `${ms / DAY} day${ms === DAY ? '' : 's'}`;
+	const minutes = Math.round(ms / MINUTE);
+	return `${minutes} minute${minutes === 1 ? '' : 's'}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -145,7 +201,32 @@ export interface CreatedSecret {
 	links: { label: string; token: string }[];
 }
 
-export function createSecret(db: Db, creator: string, input: SecretInput & { expiresAtMs: number }, now: number): CreatedSecret {
+/** Refuse a new secret when the creator or the instance already holds its share of live ones. */
+function checkCapacity(db: Db, creator: string, now: number, limits: Limits): void {
+	if (Number.isFinite(limits.maxLivePerCreator)) {
+		const { mine } = db
+			.prepare(`SELECT COUNT(*) AS mine FROM secrets WHERE creator = ? AND wiped_at IS NULL AND expires_at > ?`)
+			.get(creator, now) as { mine: number };
+		if (mine >= limits.maxLivePerCreator) {
+			throw new FullaError(503, `You already have ${mine} live secrets. Revoke one or wait for one to expire.`);
+		}
+	}
+	if (Number.isFinite(limits.maxLiveTotal)) {
+		const { total } = db
+			.prepare(`SELECT COUNT(*) AS total FROM secrets WHERE wiped_at IS NULL AND expires_at > ?`)
+			.get(now) as { total: number };
+		if (total >= limits.maxLiveTotal) throw new FullaError(503, 'This instance is busy. Try again in a few minutes.');
+	}
+}
+
+export function createSecret(
+	db: Db,
+	creator: string,
+	input: SecretInput & { expiresAtMs: number },
+	now: number,
+	limits: Limits = LIMITS
+): CreatedSecret {
+	checkCapacity(db, creator, now, limits);
 	const id = randomUUID();
 	const links = input.recipients.map((r) => ({ label: r.label, email: r.email ?? null, token: newToken() }));
 
@@ -388,8 +469,8 @@ export function revealSecret(db: Db, token: unknown, now: number): RevealResult 
 
 // ── Housekeeping ──────────────────────────────────────────────────
 
-/** Wipe what has expired and delete rows wiped longer ago than RETENTION. */
-export function sweep(db: Db, now: number): { expired: number; deleted: number } {
+/** Wipe what has expired and delete rows wiped longer ago than `retentionMs`. */
+export function sweep(db: Db, now: number, retentionMs: number = LIMITS.retentionMs): { expired: number; deleted: number } {
 	return db.transaction(() => {
 		const expired = db
 			.prepare(
@@ -397,7 +478,7 @@ export function sweep(db: Db, now: number): { expired: number; deleted: number }
 				 WHERE status = 'active' AND expires_at <= ?`
 			)
 			.run(now, now).changes;
-		const deleted = db.prepare(`DELETE FROM secrets WHERE wiped_at < ?`).run(now - RETENTION_MS).changes;
+		const deleted = db.prepare(`DELETE FROM secrets WHERE wiped_at < ?`).run(now - retentionMs).changes;
 		return { expired, deleted };
 	})();
 }
