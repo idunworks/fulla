@@ -340,8 +340,9 @@ export function openLink(db: Db, token: unknown, now: number): OpenResult {
 				now,
 				link.recipient_id
 			);
-			if (status !== 'active') return { state: 'gone', expires_at: null };
+			// Someone who has seen it is told so, even after it was wiped for everyone.
 			if (link.revealed_at !== null) return { state: 'revealed', expires_at: null };
+			if (status !== 'active') return { state: 'gone', expires_at: null };
 			return { state: 'ready', expires_at: new Date(link.expires_at).toISOString() };
 		})
 		.immediate();

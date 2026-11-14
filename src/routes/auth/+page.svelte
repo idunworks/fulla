@@ -24,7 +24,14 @@
 	let message = $state('');
 	let token = '';
 
-	afterNavigate(() => {
+	// A second sign-in link pasted into this tab changes only the fragment (see view/+page.svelte).
+	afterNavigate(readToken);
+
+	function onHashChange(): void {
+		if (window.location.hash) readToken();
+	}
+
+	function readToken(): void {
 		const fromHash = new URLSearchParams(window.location.hash.slice(1)).get('token')?.trim() ?? '';
 		if (window.location.hash) {
 			// See view/+page.svelte: replaceState must wait one microtask on first load.
@@ -33,7 +40,7 @@
 		}
 		token = fromHash;
 		authState = token ? 'ready' : 'ask';
-	});
+	}
 
 	async function ask(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
@@ -70,6 +77,8 @@
 		message = '';
 	}
 </script>
+
+<svelte:window onhashchange={onHashChange} />
 
 <svelte:head>
 	<title>{t.signIn} · Fulla</title>

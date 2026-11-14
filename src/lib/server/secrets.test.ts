@@ -145,6 +145,13 @@ describe('revealing', () => {
 		expect(getSecret(db, ALICE, id, T0 + 3)).toMatchObject({ status: 'burned', revealed_count: 2 });
 	});
 
+	it('tells a recipient who has seen it so, even after the last reveal wiped it', () => {
+		const { links } = create(db);
+		revealSecret(db, links[0].token, T0 + 1);
+		revealSecret(db, links[1].token, T0 + 2);
+		expect(openLink(db, links[0].token, T0 + 3).state).toBe('revealed');
+	});
+
 	it('a second process on the same file sees the first reveal: one wins, one gets 410', () => {
 		const file = `${process.env.TMPDIR ?? '/tmp'}/fulla-race-${process.pid}-${Date.now()}.db`;
 		const a = openDb(file);

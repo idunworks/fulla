@@ -77,7 +77,21 @@
 		} catch {
 			// No localStorage (private mode): keep the default.
 		}
+		readLink();
+	});
 
+	/**
+	 * Another link pasted into this tab changes only the fragment: the browser
+	 * stays on the page and Kit runs no navigation, so listen for it directly.
+	 */
+	function onHashChange(): void {
+		if (!window.location.hash) return;
+		plaintext = '';
+		copied = false;
+		readLink();
+	}
+
+	function readLink(): void {
 		const fragment = parseShareFragment(window.location.hash);
 		token = fragment.token ?? '';
 		key = fragment.key ?? '';
@@ -93,7 +107,7 @@
 			return;
 		}
 		void check();
-	});
+	}
 
 	function toggleHelp(): void {
 		helpOpen = !helpOpen;
@@ -114,6 +128,8 @@
 		}
 	}
 </script>
+
+<svelte:window onhashchange={onHashChange} />
 
 <svelte:head>
 	<title>Fulla</title>
