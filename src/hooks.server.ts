@@ -1,15 +1,20 @@
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { pickLang } from '$lib/i18n';
+import { isAllowed, sessionEmail } from '$lib/server/auth';
+import { allowlist } from '$lib/server/config';
+import { getDb } from '$lib/server/instance';
+import { readSessionCookie } from '$lib/server/session';
 
 /** Pages and answers that may carry a secret, or a link to one: never cached, anywhere. */
-const PRIVATE_PATHS = ['/api/', '/view', '/admin'];
+const PRIVATE_PATHS = ['/api/', '/view', '/admin', '/auth'];
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// Filled by the sign-in step; until a creator signs in, only recipients' routes work.
-	event.locals.creator = null;
+	// A signed-in creator, still on the allowlist. Recipients never have a session.
+	const email = sessionEmail(getDb(), readSessionCookie(event.cookies, event.url), Date.now());
+	event.locals.creator = email && isAllowed(allowlist(), email) ? email : null;
 	event.locals.lang = pickLang(event.request.headers.get('accept-language'), env.FULLA_LANG);
 
 	// Kit checks the origin of form posts. The API takes JSON, so check it here too:

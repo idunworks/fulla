@@ -18,7 +18,12 @@
 			<p>{t.tagline}</p>
 		</header>
 		<section class="card center">
-			<p>{t.footer}</p>
+			<p>{t.newIntro}</p>
+			<a class="btn btn-primary" href={data.signedIn ? '/admin' : '/auth'}>
+				<Icon name="lock" />
+				{data.signedIn ? t.yourSecrets : t.signInTitle}
+			</a>
 		</section>
+		<p class="footnote">{t.footer}</p>
 	</div>
 </main>

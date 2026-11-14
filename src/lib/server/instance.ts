@@ -3,6 +3,7 @@
  * Everything else takes the connection as an argument, which keeps it testable.
  */
 import { env } from '$env/dynamic/private';
+import { pruneAuth } from './auth';
 import { openDb, type Db } from './db';
 import { pruneRateLimits } from './rateLimit';
 import { sweep } from './secrets';
@@ -25,6 +26,7 @@ function housekeeping(conn: Db): void {
 	const now = Date.now();
 	sweep(conn, now);
 	pruneRateLimits(conn, now, RATE_LIMIT_MEMORY_MS);
+	pruneAuth(conn, now);
 	// Fold the write-ahead log back into the main file, so pages that held a
 	// wiped ciphertext don't linger in fulla.db-wal.
 	conn.pragma('wal_checkpoint(TRUNCATE)');

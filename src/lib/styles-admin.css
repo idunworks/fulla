@@ -1,0 +1,196 @@
+/* The creator's pages: a wider column, a top bar and lists of rows. */
+
+.page:has(.wide) {
+	align-items: flex-start;
+}
+
+.column.wide {
+	max-width: 46rem;
+}
+
+.topbar {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding-bottom: 1rem;
+	margin-bottom: 1.5rem;
+	border-bottom: 1px solid var(--border);
+}
+
+.topbar-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-weight: 700;
+	color: var(--text);
+	text-decoration: none;
+}
+
+
+.topbar-brand svg {
+	color: var(--accent);
+}
+
+.topbar-who {
+	margin-left: auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.page-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin-bottom: 1.25rem;
+}
+
+.page-head h1 {
+	margin: 0;
+	font-size: 1.5rem;
+	overflow-wrap: anywhere;
+}
+
+.back {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	margin-bottom: 0.75rem;
+	text-decoration: none;
+}
+
+.intro {
+	color: var(--muted);
+	margin: 0 0 1.25rem;
+}
+
+.rows,
+.links {
+	list-style: none;
+	margin: 0 0 1.25rem;
+	padding: 0;
+	display: grid;
+	gap: 0.6rem;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1rem 1.25rem;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	color: inherit;
+	text-decoration: none;
+}
+
+a.row:hover {
+	border-color: var(--accent);
+}
+
+.row-main {
+	display: grid;
+	gap: 0.15rem;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.row-side {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	text-align: right;
+}
+
+.pill {
+	flex-shrink: 0;
+	padding: 0.15rem 0.65rem;
+	border-radius: 999px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	border: 1px solid currentColor;
+}
+
+.pill-active {
+	color: var(--ok);
+}
+
+.pill-expired {
+	color: var(--warn);
+}
+
+.pill-burned {
+	color: var(--accent);
+}
+
+.pill-revoked {
+	color: var(--danger);
+}
+
+.recipient {
+	display: grid;
+	grid-template-columns: 1fr 1.3fr auto;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+@media (max-width: 520px) {
+	.recipient {
+		grid-template-columns: 1fr auto;
+	}
+	.recipient input[type='email'] {
+		grid-column: 1;
+	}
+}
+
+.card.warn {
+	border-color: color-mix(in oklab, var(--warn) 55%, var(--border));
+}
+
+.card.warn h2 {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--warn);
+}
+
+.links .card {
+	padding: 1rem 1.25rem;
+	margin: 0;
+}
+
+.link-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.link-url {
+	display: block;
+	font-size: 0.8rem;
+	word-break: break-all;
+	background: var(--surface-2);
+	border-radius: 0.5rem;
+	padding: 0.6rem;
+	user-select: all;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+}
+
+.danger-zone .actions {
+	margin-top: 0.5rem;
+}
+
+.card.danger-zone {
+	padding: 1.25rem;
+}

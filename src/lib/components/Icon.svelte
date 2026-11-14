@@ -8,7 +8,10 @@
 		check: 'M5 12.5l4.5 4.5L19 7.5',
 		alert: 'M12 4l9 16H3l9-16zm0 6v4m0 3v.01',
 		chevronDown: 'M6 9l6 6 6-6',
-		chevronRight: 'M9 6l6 6-6 6'
+		chevronRight: 'M9 6l6 6-6 6',
+		chevronLeft: 'M15 6l-6 6 6 6',
+		x: 'M6 6l12 12M18 6L6 18',
+		clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-13v4l3 2'
 	} as const;
 
 	let { name, size = 20 }: { name: keyof typeof PATHS; size?: number } = $props();

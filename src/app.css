@@ -13,6 +13,7 @@
 	--accent-text: #ffffff;
 	--ok: #2f7d4f;
 	--danger: #b3392f;
+	--warn: #9a6a12;
 	--radius: 14px;
 	--font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 	--mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -31,6 +32,7 @@
 		--accent-text: #0c1218;
 		--ok: #6cc28f;
 		--danger: #ef7d72;
+		--warn: #e2b55a;
 	}
 }
 
@@ -299,4 +301,89 @@ summary:focus-visible,
 	white-space: nowrap;
 	width: 1px;
 	height: 1px;
+}
+
+/* ── Forms (sign-in and the creator's pages) ───────────────────── */
+
+.stack {
+	display: grid;
+	gap: 1.1rem;
+}
+
+.field {
+	display: grid;
+	gap: 0.35rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	min-width: 0;
+}
+
+.field > span,
+.field > label,
+.field > legend {
+	font-weight: 600;
+	font-size: 0.92rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0;
+	margin-bottom: 0.35rem;
+}
+
+.field small {
+	color: var(--muted);
+	font-size: 0.82rem;
+}
+
+input,
+textarea,
+select {
+	font: inherit;
+	color: var(--text);
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 0.6rem;
+	padding: 0.65rem 0.8rem;
+	width: 100%;
+	min-width: 0;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: 3px solid color-mix(in oklab, var(--accent) 45%, transparent);
+	outline-offset: 1px;
+	border-color: var(--accent);
+}
+
+.mono {
+	font-family: var(--mono);
+	font-size: 0.9rem;
+}
+
+.form-error {
+	color: var(--danger);
+	font-weight: 600;
+	margin: 0;
+}
+
+.btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.btn-small {
+	padding: 0.4rem 0.8rem;
+	font-size: 0.88rem;
+	border-radius: 0.6rem;
+}
+
+.btn-icon {
+	padding: 0.5rem;
+}
+
+.btn-danger {
+	background: var(--danger);
+	color: var(--accent-text);
 }

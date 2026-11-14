@@ -40,7 +40,27 @@ const MIGRATIONS: readonly string[] = [
 		key          TEXT PRIMARY KEY,
 		window_start INTEGER NOT NULL,
 		count        INTEGER NOT NULL
-	);`
+	);`,
+
+	// Creators' sign-in: emailed one-time links and the sessions they start.
+	// Both store only a SHA-256 of the random value the browser holds.
+	`CREATE TABLE login_tokens (
+		token_hash  TEXT PRIMARY KEY,
+		email       TEXT NOT NULL,
+		next        TEXT NOT NULL,
+		expires_at  INTEGER NOT NULL,
+		used_at     INTEGER,
+		created_at  INTEGER NOT NULL
+	);
+	CREATE INDEX login_tokens_email ON login_tokens (email, created_at);
+
+	CREATE TABLE sessions (
+		id_hash     TEXT PRIMARY KEY,
+		email       TEXT NOT NULL,
+		expires_at  INTEGER NOT NULL,
+		created_at  INTEGER NOT NULL
+	);
+	CREATE INDEX sessions_expiry ON sessions (expires_at);`
 ];
 
 /** Open (or create) the database file and bring its schema up to date. */
